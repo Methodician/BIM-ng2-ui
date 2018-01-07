@@ -14,7 +14,7 @@ import { environment } from '../environments/environment';
   ],
   imports: [
     BrowserModule,
-    NguiMapModule.forRoot({ apiUrl: `https://maps.google.com/maps/api/js?key=${environment.googleMapsKey}` })
+    NguiMapModule.forRoot({ apiUrl: `https://maps.google.com/maps/api/js?key=${environment.googleMapsKey}&libraries=drawing` })
   ],
   providers: [],
   bootstrap: [AppComponent]

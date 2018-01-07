@@ -1,5 +1,5 @@
-import { Component } from '@angular/core';
-
+import { Component, ViewChild, OnInit } from '@angular/core';
+import { DrawingManager } from '@ngui/map';
 
 @Component({
   selector: 'app-root',
@@ -7,8 +7,10 @@ import { Component } from '@angular/core';
   styleUrls: ['./app.component.css']
 })
 export class AppComponent {
+  @ViewChild(DrawingManager) drawingManager: DrawingManager;
   positions = [];
-  editorListeners
+  selectedOverlay: any;
+
 
   //  based on google example, may be better for Firestore
   outerPaths = [
@@ -36,10 +38,35 @@ export class AppComponent {
   //   { lat: 27.339, lng: -66.668 }
   // ]];
 
+  ngOnInit() {
+    this.drawingManager['initialized$'].subscribe(dm => {
+      google.maps.event.addListener(dm, 'overlaycomplete', event => {
+        if (event.type !== google.maps.drawing.OverlayType.MARKER) {
+          dm.setDrawingMode(null);
+          console.log(event);
+          event.overlay.setEditable(false);
+          google.maps.event.addListener(event.overlay, 'mouseup', e => {
+            this.onPolyMouseUp(event.overlay);
+          });
+          google.maps.event.addListener(event.overlay, 'rightclick', e => {
+            this.onPolyRightClick(event.overlay);
+          });
+        }
+      })
+    })
+  }
+
+  deleteSelectedOverlay() {
+    if (this.selectedOverlay) {
+      this.selectedOverlay.setMap(null);
+      delete this.selectedOverlay;
+    }
+  }
+
   //  potentially useful polygon snapper: https://github.com/jordanarseno/polysnapper
   onPolyMouseUp(e) {
     console.log('polygon moused up', e);
-    e.target.getPaths().forEach((path, index) => {
+    e.getPaths().forEach((path, index) => {
       console.log('path index:', index);
       // google.maps.event.addListener(path, 'set_at', (index, oldLatLng) => {
       //   let newLatLng = path.getAt(index);
@@ -51,22 +78,27 @@ export class AppComponent {
     });
   }
 
-  onPolyClick(e) {
-    console.log(e.target);
-    const editable = e.target.editable;
+  onPolyRightClick(e) {
+    console.log(e);
+    const editable = e.editable;
     if (editable) {
-      e.target.getPaths().forEach((path, index) => {
+      this.selectedOverlay = null;
+      e.getPaths().forEach((path, index) => {
         console.log('path index:', index);
         google.maps.event.clearListeners(path, 'set_at');
         google.maps.event.clearListeners(path, 'insert_at');
         path.getArray().forEach(latLng => {
+          //  can save from here. Getting latest paths.
+          //  May not need all the listeners for set and insert after all?
           console.log(latLng.toJSON());
         });
       });
-      e.target.setEditable(false);
+      e.setEditable(false);
+      e.setDraggable(false);
     }
     else {
-      e.target.getPaths().forEach((path, index) => {
+      this.selectedOverlay = e;
+      e.getPaths().forEach((path, index) => {
         console.log('path index:', index);
         google.maps.event.addListener(path, 'set_at', (index, oldLatLng) => {
           let newLatLng = path.getAt(index);
@@ -84,7 +116,8 @@ export class AppComponent {
           console.log(index, coord.toJSON());
         });
       });
-      e.target.setEditable(true);
+      e.setEditable(true);
+      e.setDraggable(true);
     }
   }
   onMapReady(map) {

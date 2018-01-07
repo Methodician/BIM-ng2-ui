@@ -5,17 +5,34 @@
           (idle)="onIdle($event)"
           mapTypeId="satellite">
 
+  <drawing-manager [drawingMode]="'polygon'"
+                   [drawingControl]="true"
+                   [drawingControlOptions]="{
+                  position: 2,
+                  drawingModes: ['marker', 'polygon', 'polyline']
+                }"
+                   [polygonOptions]="{
+                  fillColor: '#ffff00',
+                  fillOpacity: 1,
+                  strokeWeight: 5,
+                  editable: true,
+                  xIndex: 1
+                }">
+  </drawing-manager>
+
   <marker *ngFor="let pos of positions"
           [position]="pos"
           (initialized$)="onMarkerInit($event)">
   </marker>
+
   <polygon [paths]="paths"
            [strokeColor]="'#FFC107'"
            [strokeOpacity]="0.8"
            [strokeWeight]="2"
            [fillColor]="'#FFC107'"
            [fillOpacity]="0.35"
-           (mouseup)="onPolyMouseUp($event)"
-           (rightclick)="onPolyClick($event)">
+           (mouseup)="onPolyMouseUp($event.target)"
+           (rightclick)="onPolyRightClick($event.target)">
   </polygon>
 </ngui-map>
+<button (click)="deleteSelectedOverlay()">Delete Selected Overlay</button>
