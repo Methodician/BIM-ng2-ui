@@ -1,8 +1,11 @@
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
-
+import { NguiMapModule } from '@ngui/map';
 
 import { AppComponent } from './app.component';
+
+
+import { environment } from '../environments/environment';
 
 
 @NgModule({
@@ -10,7 +13,8 @@ import { AppComponent } from './app.component';
     AppComponent
   ],
   imports: [
-    BrowserModule
+    BrowserModule,
+    NguiMapModule.forRoot({ apiUrl: `https://maps.google.com/maps/api/js?key=${environment.googleMapsKey}` })
   ],
   providers: [],
   bootstrap: [AppComponent]
