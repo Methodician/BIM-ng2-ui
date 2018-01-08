@@ -1,11 +1,11 @@
 <ngui-map style="height: calc(100vh - 50px);"
-          center="Maiami, Florida"
+          center="Portland, Oregon"
           (mapReady$)="onMapReady($event)"
           (mapClick)="onMapClick($event)"
           (idle)="onIdle($event)"
           mapTypeId="satellite">
 
-  <drawing-manager [drawingMode]="'polygon'"
+  <drawing-manager [drawingMode]="polygon"
                    [drawingControl]="true"
                    [drawingControlOptions]="{
                   position: 2,
@@ -34,5 +34,17 @@
            (mouseup)="onPolyMouseUp($event.target)"
            (rightclick)="onPolyRightClick($event.target)">
   </polygon>
+
+  <polygon *ngFor="let poly of polygons"
+           [strokeColor]="'#FFC107'"
+           [strokeOpacity]="0.8"
+           [strokeWeight]="2"
+           [fillColor]="'#FFC107'"
+           [fillOpacity]="0.35"
+           [paths]="poly.paths"
+           (mouseup)="onPolyMouseUp($event.target)"
+           (rightclick)="onPolyRightClick($event.target, poly)">
+  </polygon>
+
 </ngui-map>
 <button (click)="deleteSelectedOverlay()">Delete Selected Overlay</button>

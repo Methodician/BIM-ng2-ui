@@ -1,5 +1,7 @@
 import { Component, ViewChild, OnInit } from '@angular/core';
 import { DrawingManager } from '@ngui/map';
+import { MapService } from './services/map.service';
+import { Polygon } from '@ngui/map/dist/directives/polygon';
 
 @Component({
   selector: 'app-root',
@@ -10,6 +12,8 @@ export class AppComponent {
   @ViewChild(DrawingManager) drawingManager: DrawingManager;
   positions = [];
   selectedOverlay: any;
+
+  polygons: any;
 
 
   //  based on google example, may be better for Firestore
@@ -38,9 +42,14 @@ export class AppComponent {
   //   { lat: 27.339, lng: -66.668 }
   // ]];
 
+  constructor(private mapSvc: MapService) { }
   ngOnInit() {
+    this.mapSvc.getPolygons().valueChanges().subscribe((polygons: Polygon[]) => {
+      this.polygons = polygons;
+    })
     this.drawingManager['initialized$'].subscribe(dm => {
       google.maps.event.addListener(dm, 'overlaycomplete', event => {
+        console.log('drawing manager', dm);
         if (event.type !== google.maps.drawing.OverlayType.MARKER) {
           dm.setDrawingMode(null);
           console.log(event);
@@ -65,33 +74,41 @@ export class AppComponent {
 
   //  potentially useful polygon snapper: https://github.com/jordanarseno/polysnapper
   onPolyMouseUp(e) {
-    console.log('polygon moused up', e);
-    e.getPaths().forEach((path, index) => {
-      console.log('path index:', index);
-      // google.maps.event.addListener(path, 'set_at', (index, oldLatLng) => {
-      //   let newLatLng = path.getAt(index);
-      //   console.log('new coord:', newLatLng.toJSON());
-      // });
-      path.getArray().forEach((coord, index) => {
-        console.log(index, coord.toJSON());
-      });
-    });
+    // console.log('polygon moused up', e);
+    // e.getPaths().forEach((path, index) => {
+    //   // console.log('path index:', index);
+    //   path.getArray().forEach((coord, index) => {
+    //     // console.log(index, coord.toJSON());
+    //   });
+    // });
   }
 
-  onPolyRightClick(e) {
-    console.log(e);
+  onPolyRightClick(e, polygon?) {
+    console.log('poly rigth click polygon', polygon);
+    console.log('poly right click event', e);
     const editable = e.editable;
     if (editable) {
       this.selectedOverlay = null;
+
       e.getPaths().forEach((path, index) => {
-        console.log('path index:', index);
+        // console.log('path index:', index);
         google.maps.event.clearListeners(path, 'set_at');
         google.maps.event.clearListeners(path, 'insert_at');
-        path.getArray().forEach(latLng => {
-          //  can save from here. Getting latest paths.
-          //  May not need all the listeners for set and insert after all?
-          console.log(latLng.toJSON());
-        });
+        let newPaths = path.getArray().map(latLng => latLng.toJSON());
+        console.log('newPaths:', newPaths);
+        // path.getArray().forEach(latLng => {
+        //   //  can save from here. Getting latest paths.
+        //   //  May not need all the listeners for set and insert after all?
+        //   console.log(latLng.toJSON());
+        // });
+        if (polygon && polygon.id) {
+          polygon.paths = newPaths;
+          this.mapSvc.updatePolygonPaths(polygon);
+        }
+        else {
+          let polygon = { paths: newPaths };
+          this.mapSvc.addPolygon(polygon);
+        }
       });
       e.setEditable(false);
       e.setDraggable(false);
@@ -99,18 +116,18 @@ export class AppComponent {
     else {
       this.selectedOverlay = e;
       e.getPaths().forEach((path, index) => {
-        console.log('path index:', index);
+        // console.log('path index:', index);
         google.maps.event.addListener(path, 'set_at', (index, oldLatLng) => {
           let newLatLng = path.getAt(index);
-          console.log('coord SET');
-          console.log('coord index:', index);
-          console.log('new coord:', newLatLng.toJSON());
+          // console.log('coord SET');
+          // console.log('coord index:', index);
+          // console.log('new coord:', newLatLng.toJSON());
         });
         google.maps.event.addListener(path, 'insert_at', (index, oldLatLng) => {
           let newLatLng = path.getAt(index);
-          console.log('coord INSERTED');
-          console.log('coord index:', index);
-          console.log('new coord:', newLatLng.toJSON());
+          // console.log('coord INSERTED');
+          // console.log('coord index:', index);
+          // console.log('new coord:', newLatLng.toJSON());
         });
         path.getArray().forEach((coord, index) => {
           console.log(index, coord.toJSON());
@@ -134,9 +151,9 @@ export class AppComponent {
   }
 
   onMapClick(event) {
-    this.positions.push(event.latLng);
-    event.target.panTo(event.latLng);
-    console.log('event from map click', event);
-    console.log('positions', this.positions);
+    // this.positions.push(event.latLng);
+    // event.target.panTo(event.latLng);
+    // console.log('event from map click', event);
+    // console.log('positions', this.positions);
   }
 }
